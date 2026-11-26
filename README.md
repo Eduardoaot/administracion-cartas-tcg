@@ -19,16 +19,16 @@ docker-compose.gpu.yml   Override para GPU NVIDIA
 .env.example             Variables documentadas
 ```
 
-| Servicio | URL en tu equipo                        | Notas                                      |
-| -------- | --------------------------------------- | ------------------------------------------ |
-| web      | http://localhost:8080                   | Página de estado                           |
-| api      | http://localhost:4000/health            | También vía http://localhost:8080/api/health |
-| ai       | _(no publicado)_                        | Solo accesible desde el api, por diseño    |
-| MySQL 8  | `localhost:3307`                        | usuario `boveda` / `boveda`                |
-| Redis    | `localhost:6379`                        |                                            |
-| MinIO    | http://localhost:9001 (consola)         | `boveda` / `boveda-secret-123`             |
-| Mailpit  | http://localhost:8025                   | Bandeja de correos de desarrollo           |
-| Ollama   | http://localhost:11435                  | LLM local (11435 para no chocar con un Ollama nativo) |
+| Servicio | URL en tu equipo                | Notas                                                 |
+| -------- | ------------------------------- | ----------------------------------------------------- |
+| web      | http://localhost:8080           | Página de estado                                      |
+| api      | http://localhost:4000/health    | También vía http://localhost:8080/api/health          |
+| ai       | _(no publicado)_                | Solo accesible desde el api, por diseño               |
+| MySQL 8  | `localhost:3307`                | usuario `boveda` / `boveda`                           |
+| Redis    | `localhost:6379`                |                                                       |
+| MinIO    | http://localhost:9001 (consola) | `boveda` / `boveda-secret-123`                        |
+| Mailpit  | http://localhost:8025           | Bandeja de correos de desarrollo                      |
+| Ollama   | http://localhost:11435          | LLM local (11435 para no chocar con un Ollama nativo) |
 
 Todos los puertos (salvo web) se publican solo en `127.0.0.1`.
 
@@ -99,6 +99,7 @@ docker compose exec ollama ollama run llama3.2:3b "Di hola en una palabra"
   ```
 
   y ejecuta `wsl --shutdown` antes de volver a abrir Docker Desktop.
+
 - `OLLAMA_MAX_LOADED_MODELS=1` evita tener los dos modelos cargados a la vez.
 - Para usar un modelo distinto, cambia `OLLAMA_VISION_MODEL` u `OLLAMA_TEXT_MODEL` en `.env`,
   descárgalo con `ollama pull` y reinicia: `docker compose up -d api ai`.
@@ -152,14 +153,14 @@ docker compose exec ai python -m ruff check .
 
 Todas están documentadas en [.env.example](.env.example). Las más importantes:
 
-| Variable                                     | Default                      | Para qué                           |
-| -------------------------------------------- | ---------------------------- | ---------------------------------- |
-| `AI_DEVICE`                                  | `cpu`                        | `cpu`, `cuda` o `auto`             |
-| `AI_SEGMENTER`                               | `opencv`                     | `opencv` (línea base) o `sam3` (Fase 3) |
-| `OLLAMA_VISION_MODEL`                        | `llama3.2-vision:11b`        | Modelo multimodal                  |
-| `OLLAMA_TEXT_MODEL`                          | `llama3.2:3b`                | Modelo de texto con herramientas   |
-| `WEB_ORIGIN`                                 | `http://localhost:8080`      | Único origen permitido por CORS    |
-| `MINIO_VERSION`                              | `latest`                     | Versión de MinIO a compilar (ver nota) |
+| Variable              | Default                 | Para qué                                |
+| --------------------- | ----------------------- | --------------------------------------- |
+| `AI_DEVICE`           | `cpu`                   | `cpu`, `cuda` o `auto`                  |
+| `AI_SEGMENTER`        | `opencv`                | `opencv` (línea base) o `sam3` (Fase 3) |
+| `OLLAMA_VISION_MODEL` | `llama3.2-vision:11b`   | Modelo multimodal                       |
+| `OLLAMA_TEXT_MODEL`   | `llama3.2:3b`           | Modelo de texto con herramientas        |
+| `WEB_ORIGIN`          | `http://localhost:8080` | Único origen permitido por CORS         |
+| `MINIO_VERSION`       | `latest`                | Versión de MinIO a compilar (ver nota)  |
 
 ### Nota sobre MinIO
 
