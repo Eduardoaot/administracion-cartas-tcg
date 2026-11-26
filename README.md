@@ -28,7 +28,7 @@ docker-compose.gpu.yml   Override para GPU NVIDIA
 | Redis    | `localhost:6379`                        |                                            |
 | MinIO    | http://localhost:9001 (consola)         | `boveda` / `boveda-secret-123`             |
 | Mailpit  | http://localhost:8025                   | Bandeja de correos de desarrollo           |
-| Ollama   | http://localhost:11434                  | LLM local                                  |
+| Ollama   | http://localhost:11435                  | LLM local (11435 para no chocar con un Ollama nativo) |
 
 Todos los puertos (salvo web) se publican solo en `127.0.0.1`.
 
@@ -116,7 +116,7 @@ Crea un `.env` en la raíz para el api local:
 DATABASE_URL=mysql://boveda:boveda@localhost:3307/boveda
 REDIS_URL=redis://localhost:6379
 MINIO_ENDPOINT=http://localhost:9000
-OLLAMA_URL=http://localhost:11434
+OLLAMA_URL=http://localhost:11435
 AI_SERVICE_URL=http://localhost:8000
 WEB_ORIGIN=http://localhost:5173
 ```
@@ -132,7 +132,7 @@ El servicio `ai` no publica puertos. Para correrlo fuera de Docker:
 cd services/ai
 python -m venv .venv && . .venv/bin/activate     # Windows: .venv\Scripts\activate
 pip install -r requirements-dev.txt
-OLLAMA_URL=http://localhost:11434 uvicorn app.main:app --reload --port 8000
+OLLAMA_URL=http://localhost:11435 uvicorn app.main:app --reload --port 8000
 ```
 
 ## Pruebas, lint y formato
