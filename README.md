@@ -1,7 +1,7 @@
 # Bóveda TCG
 
 Convierte una foto de cartas físicas en una colección digital valuada y permite intercambiarlas con
-verificación anti-fraude. Juegos soportados: **5-toubun no Hanayome Card Game** y **Pokémon TCG**.
+verificación anti-fraude. Juego soportado: **Pokémon TCG**.
 Toda la IA corre localmente: ninguna foto ni mensaje sale de tu equipo.
 
 > Estado actual: **Fase 0, base del proyecto.** Infraestructura, `/health` en api y ai, y una
@@ -35,7 +35,7 @@ Todos los puertos (salvo web) se publican solo en `127.0.0.1`.
 ## Requisitos
 
 - Docker Desktop (Windows/macOS) o Docker Engine + Compose v2.
-- **Memoria para Docker: 12 GB o más** si vas a usar `llama3.2-vision:11b` en CPU (ver abajo).
+- **Memoria para Docker: 8 GB o más** (con el modelo de visión por defecto, `qwen3-vl:4b`).
 - Disco: unos 15 GB libres (imágenes más modelos de Ollama).
 - Opcional: GPU NVIDIA con 8–12 GB de VRAM y [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)
   (en Windows basta Docker Desktop con WSL2 y el driver NVIDIA actualizado).
@@ -65,16 +65,16 @@ Para detener: `docker compose down`. Para borrar también los datos: `docker com
 
 Los nombres se verificaron en https://ollama.com/library (noviembre de 2026):
 
-| Uso                                           | Modelo (variable)                             | Tamaño | Capacidad |
-| --------------------------------------------- | --------------------------------------------- | ------ | --------- |
-| Leer nombre/número/idioma, pre-grado, pruebas | `llama3.2-vision:11b` (`OLLAMA_VISION_MODEL`) | 7.8 GB | vision    |
-| Copiloto y vigilancia de chat                 | `llama3.2:3b` (`OLLAMA_TEXT_MODEL`)           | 2.0 GB | tools     |
+| Uso                                           | Modelo (variable)                     | Tamaño | Capacidad |
+| --------------------------------------------- | ------------------------------------- | ------ | --------- |
+| Leer nombre/número/idioma, pre-grado, pruebas | `qwen3-vl:4b` (`OLLAMA_VISION_MODEL`) | 3.3 GB | vision    |
+| Copiloto y vigilancia de chat                 | `llama3.2:3b` (`OLLAMA_TEXT_MODEL`)   | 2.0 GB | tools     |
 
 Descárgalos con el entorno levantado (solo hace falta una vez; quedan en el volumen
 `ollama-models`):
 
 ```bash
-docker compose exec ollama ollama pull llama3.2-vision:11b
+docker compose exec ollama ollama pull qwen3-vl:4b
 docker compose exec ollama ollama pull llama3.2:3b
 docker compose exec ollama ollama list     # comprobar
 ```
@@ -88,7 +88,10 @@ docker compose exec ollama ollama run llama3.2:3b "Di hola en una palabra"
 ### Memoria y modo CPU
 
 - `AI_DEVICE=cpu` (default) funciona en cualquier equipo. `cuda` requiere el override de GPU.
-- En CPU, `llama3.2-vision:11b` necesita unos 8–10 GB de RAM libres **dentro de Docker** y tarda
+- Se eligió `qwen3-vl:4b` en lugar de `llama3.2-vision:11b` porque el equipo de desarrollo no tiene GPU
+  NVIDIA y Docker dispone de unos 8 GB. Si va lento, prueba `qwen3-vl:2b` (1.9 GB). Con una GPU de
+  8 GB o más puedes volver a `llama3.2-vision:11b` (7.8 GB).
+- En CPU, `llama3.2-vision:11b` necesitaría unos 8–10 GB de RAM libres **dentro de Docker** y tardaría
   decenas de segundos por imagen. En Windows, Docker Desktop (WSL2) usa por defecto la mitad de
   la RAM del equipo. Para subirla, crea `%UserProfile%\.wslconfig`:
 
@@ -157,7 +160,7 @@ Todas están documentadas en [.env.example](.env.example). Las más importantes:
 | --------------------- | ----------------------- | --------------------------------------- |
 | `AI_DEVICE`           | `cpu`                   | `cpu`, `cuda` o `auto`                  |
 | `AI_SEGMENTER`        | `opencv`                | `opencv` (línea base) o `sam3` (Fase 3) |
-| `OLLAMA_VISION_MODEL` | `llama3.2-vision:11b`   | Modelo multimodal                       |
+| `OLLAMA_VISION_MODEL` | `qwen3-vl:4b`           | Modelo multimodal                       |
 | `OLLAMA_TEXT_MODEL`   | `llama3.2:3b`           | Modelo de texto con herramientas        |
 | `WEB_ORIGIN`          | `http://localhost:8080` | Único origen permitido por CORS         |
 | `MINIO_VERSION`       | `latest`                | Versión de MinIO a compilar (ver nota)  |
@@ -182,7 +185,7 @@ cambiar después por otro servidor compatible con S3 sin tocar el código.
 ## Hoja de ruta
 
 0. Base del proyecto ← _actual_
-1. Login avanzado (correo, 2FA, Google, sesiones, roles)
+1. Login avanzado (correo, 2FA, sesiones, roles; Google OAuth omitido por ahora)
 2. Catálogo
 3. Escaneo e identificación (OpenCV/SAM 3, DINOv2 + FAISS, Llama 3.2 Vision)
 4. Colección y valor

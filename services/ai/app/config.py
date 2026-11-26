@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     ai_device: Literal["cpu", "cuda", "auto"] = "cpu"
     ai_segmenter: Literal["opencv", "sam3"] = "opencv"
     ollama_url: str = "http://ollama:11434"
-    ollama_vision_model: str = "llama3.2-vision:11b"
+    ollama_vision_model: str = "qwen3-vl:4b"
     ollama_text_model: str = "llama3.2:3b"
     health_timeout_s: float = 2.0
 

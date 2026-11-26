@@ -2,7 +2,7 @@
   "name": "boveda-tcg",
   "private": true,
   "version": "0.0.0",
-  "description": "Bóveda TCG: colección digital valuada e intercambios verificados para 5-toubun no Hanayome Card Game y Pokémon",
+  "description": "Bóveda TCG: colección digital valuada e intercambios verificados para Pokémon TCG",
   "workspaces": [
     "apps/api",
     "apps/web"

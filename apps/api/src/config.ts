@@ -9,7 +9,7 @@ const envSchema = z.object({
   MINIO_ENDPOINT: z.string().url().default('http://localhost:9000'),
   AI_SERVICE_URL: z.string().url().default('http://localhost:8000'),
   OLLAMA_URL: z.string().url().default('http://localhost:11434'),
-  OLLAMA_VISION_MODEL: z.string().default('llama3.2-vision:11b'),
+  OLLAMA_VISION_MODEL: z.string().default('qwen3-vl:4b'),
   OLLAMA_TEXT_MODEL: z.string().default('llama3.2:3b'),
   HEALTH_TIMEOUT_MS: z.coerce.number().int().positive().default(2000),
 });

@@ -32,7 +32,7 @@ def test_health_ok_con_modelos_instalados(monkeypatch):
     mock_ollama(
         monkeypatch,
         lambda req: httpx.Response(
-            200, json={"models": [{"name": "llama3.2-vision:11b"}, {"name": "llama3.2:3b"}]}
+            200, json={"models": [{"name": "qwen3-vl:4b"}, {"name": "llama3.2:3b"}]}
         ),
     )
     res = make_client().get("/health")
@@ -46,7 +46,7 @@ def test_health_ok_con_modelos_instalados(monkeypatch):
 def test_health_reporta_modelos_faltantes(monkeypatch):
     mock_ollama(monkeypatch, lambda req: httpx.Response(200, json={"models": []}))
     body = make_client().get("/health").json()
-    assert body["ollama"]["missing"] == ["llama3.2-vision:11b", "llama3.2:3b"]
+    assert body["ollama"]["missing"] == ["qwen3-vl:4b", "llama3.2:3b"]
 
 
 def test_health_sigue_ok_si_ollama_no_responde(monkeypatch):

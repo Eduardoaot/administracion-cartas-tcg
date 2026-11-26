@@ -96,6 +96,6 @@ describe('loadConfig', () => {
   it('aplica valores por defecto', () => {
     const c = loadConfig({});
     expect(c.API_PORT).toBe(4000);
-    expect(c.OLLAMA_VISION_MODEL).toBe('llama3.2-vision:11b');
+    expect(c.OLLAMA_VISION_MODEL).toBe('qwen3-vl:4b');
   });
 });
