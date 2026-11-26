@@ -1,0 +1,157 @@
+# Bóveda TCG: entorno completo.
+#   docker compose up --build
+# Con GPU NVIDIA:
+#   docker compose -f docker-compose.yml -f docker-compose.gpu.yml up --build
+name: boveda-tcg
+
+x-restart: &restart
+  restart: unless-stopped
+
+services:
+  mysql:
+    <<: *restart
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-boveda}
+      MYSQL_USER: ${MYSQL_USER:-boveda}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-boveda}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+    command: ['--character-set-server=utf8mb4', '--collation-server=utf8mb4_0900_ai_ci']
+    ports:
+      - '127.0.0.1:${MYSQL_HOST_PORT:-3307}:3306'
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ['CMD-SHELL', 'mysqladmin ping -h 127.0.0.1 -uroot -p"$$MYSQL_ROOT_PASSWORD" --silent']
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+  redis:
+    <<: *restart
+    image: redis:7.4-alpine
+    command: ['redis-server', '--appendonly', 'yes']
+    ports:
+      - '127.0.0.1:${REDIS_HOST_PORT:-6379}:6379'
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  minio:
+    <<: *restart
+    # MinIO comunitario ya no publica imágenes: se compila desde el código (ver infra/minio).
+    build:
+      context: ./infra/minio
+      args:
+        MINIO_VERSION: ${MINIO_VERSION:-latest}
+    image: boveda-tcg/minio:local
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-boveda}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-boveda-secret-123}
+    ports:
+      - '127.0.0.1:${MINIO_API_HOST_PORT:-9000}:9000'
+      - '127.0.0.1:${MINIO_CONSOLE_HOST_PORT:-9001}:9001'
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:9000/minio/health/live']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  mailpit:
+    <<: *restart
+    image: axllent/mailpit:v1.34
+    ports:
+      - '127.0.0.1:${MAILPIT_UI_HOST_PORT:-8025}:8025'
+      - '127.0.0.1:${MAILPIT_SMTP_HOST_PORT:-1025}:1025'
+    healthcheck:
+      test: ['CMD', '/mailpit', 'readyz']
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  ollama:
+    <<: *restart
+    image: ollama/ollama:${OLLAMA_IMAGE_TAG:-latest}
+    environment:
+      OLLAMA_KEEP_ALIVE: ${OLLAMA_KEEP_ALIVE:-10m}
+      OLLAMA_MAX_LOADED_MODELS: ${OLLAMA_MAX_LOADED_MODELS:-1}
+    ports:
+      - '127.0.0.1:${OLLAMA_HOST_PORT:-11434}:11434'
+    volumes:
+      - ollama-models:/root/.ollama
+    healthcheck:
+      test: ['CMD', 'ollama', 'list']
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  ai:
+    <<: *restart
+    build:
+      context: ./services/ai
+      args:
+        INSTALL_DEV: ${AI_INSTALL_DEV:-true}
+    environment:
+      AI_DEVICE: ${AI_DEVICE:-cpu}
+      AI_SEGMENTER: ${AI_SEGMENTER:-opencv}
+      OLLAMA_URL: http://ollama:11434
+      OLLAMA_VISION_MODEL: ${OLLAMA_VISION_MODEL:-llama3.2-vision:11b}
+      OLLAMA_TEXT_MODEL: ${OLLAMA_TEXT_MODEL:-llama3.2:3b}
+    # Sin "ports": el servicio de IA solo es accesible desde la red interna (lo llama el api).
+    expose:
+      - '8000'
+    depends_on:
+      ollama:
+        condition: service_started
+
+  api:
+    <<: *restart
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    environment:
+      NODE_ENV: production
+      API_PORT: 4000
+      WEB_ORIGIN: ${WEB_ORIGIN:-http://localhost:8080}
+      DATABASE_URL: mysql://${MYSQL_USER:-boveda}:${MYSQL_PASSWORD:-boveda}@mysql:3306/${MYSQL_DATABASE:-boveda}
+      REDIS_URL: redis://redis:6379
+      MINIO_ENDPOINT: http://minio:9000
+      AI_SERVICE_URL: http://ai:8000
+      OLLAMA_URL: http://ollama:11434
+      OLLAMA_VISION_MODEL: ${OLLAMA_VISION_MODEL:-llama3.2-vision:11b}
+      OLLAMA_TEXT_MODEL: ${OLLAMA_TEXT_MODEL:-llama3.2:3b}
+    ports:
+      - '127.0.0.1:${API_HOST_PORT:-4000}:4000'
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      ai:
+        condition: service_healthy
+
+  web:
+    <<: *restart
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    ports:
+      - '${WEB_HOST_PORT:-8080}:80'
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  mysql-data:
+  redis-data:
+  minio-data:
+  ollama-models:
