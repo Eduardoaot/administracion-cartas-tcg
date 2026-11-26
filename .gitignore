@@ -19,3 +19,6 @@ __pycache__/
 # Modelos y datos locales
 services/ai/models/
 data/
+
+# Cliente generado por Prisma (se crea con prisma generate)
+apps/api/src/generated/
